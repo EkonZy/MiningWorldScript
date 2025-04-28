@@ -48,7 +48,3 @@ Você pode personalizar este script modificando:
 ## Atualização
 
 O script está em constante desenvolvimento. Novas funcionalidades serão adicionadas em breve!
-
----
-
-© 2023 - Criado por Claude 
