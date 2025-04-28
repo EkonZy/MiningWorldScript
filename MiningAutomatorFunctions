@@ -1,0 +1,307 @@
+-- Mining World Automator - Funções Principais
+-- Criado por: Claude
+
+local MiningAutomator = {}
+
+-- Referências importantes
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local hrp = character:WaitForChild("HumanoidRootPart")
+
+-- Configurações
+MiningAutomator.Config = {
+    AutoMine = false,
+    AutoTeleport = false,
+    MiningDelay = 0.5,
+    SelectedNodeTypes = {
+        ["Iron Node"] = true
+    },
+    Stats = {
+        NodesMined = 0,
+        MoneyEarned = 0,
+        StartTime = 0
+    }
+}
+
+-- Encontrar todos os nodes de minério no jogo
+function MiningAutomator:FindOreNodes()
+    local nodes = {}
+    
+    -- Procurar por nodes no workspace
+    for _, obj in pairs(workspace:GetChildren()) do
+        -- Verificar se o objeto é um node baseado em alguma característica 
+        -- (nome, propriedades específicas, etc.)
+        if obj:IsA("Model") or obj:IsA("Part") then
+            -- Assumindo que os nodes têm "Node" no nome, ajuste conforme necessário
+            if obj.Name:find("Node") and self:IsNodeTypeSelected(obj.Name) then
+                table.insert(nodes, obj)
+            end
+        end
+    end
+    
+    return nodes
+end
+
+-- Verificar se o tipo de node está selecionado
+function MiningAutomator:IsNodeTypeSelected(nodeName)
+    for nodeType, selected in pairs(self.Config.SelectedNodeTypes) do
+        if selected and nodeName:find(nodeType) then
+            return true
+        end
+    end
+    return false
+end
+
+-- Encontrar o node mais próximo
+function MiningAutomator:FindNearestNode()
+    local nodes = self:FindOreNodes()
+    local nearestNode = nil
+    local minDistance = math.huge
+    
+    for _, node in pairs(nodes) do
+        local nodePosition
+        if node:IsA("Model") and node.PrimaryPart then
+            nodePosition = node.PrimaryPart.Position
+        elseif node:IsA("BasePart") then
+            nodePosition = node.Position
+        else
+            -- Tentar encontrar uma parte para usar como posição
+            local part = node:FindFirstChildWhichIsA("BasePart")
+            if part then
+                nodePosition = part.Position
+            else
+                continue -- Pular este node se não conseguir encontrar uma posição
+            end
+        end
+        
+        local distance = (hrp.Position - nodePosition).Magnitude
+        if distance < minDistance then
+            minDistance = distance
+            nearestNode = node
+        end
+    end
+    
+    return nearestNode
+end
+
+-- Teleportar para um node
+function MiningAutomator:TeleportToNode(node)
+    if not node then return false end
+    
+    local targetPosition
+    if node:IsA("Model") and node.PrimaryPart then
+        targetPosition = node.PrimaryPart.Position
+    elseif node:IsA("BasePart") then
+        targetPosition = node.Position
+    else
+        local part = node:FindFirstChildWhichIsA("BasePart")
+        if part then
+            targetPosition = part.Position
+        else
+            return false
+        end
+    end
+    
+    -- Adicionar um pequeno offset para não ficar dentro do node
+    targetPosition = targetPosition + Vector3.new(0, 3, 0)
+    
+    -- Teleportar o personagem
+    if self.Config.AutoTeleport then
+        hrp.CFrame = CFrame.new(targetPosition)
+        return true
+    end
+    
+    return false
+end
+
+-- Minerar um node
+function MiningAutomator:MineNode(node)
+    if not node then return false end
+    
+    -- Aqui precisamos entender a mecânica do jogo para minerar
+    -- Isso pode envolver:
+    -- 1. Enviar um evento remoto
+    -- 2. Usar uma ferramenta específica
+    -- 3. Clicar no node
+    
+    -- Como exemplo, vamos assumir que precisa usar uma ferramenta e clicar
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool then
+        -- Tenta equipar uma ferramenta do inventário
+        local backpack = player:FindFirstChild("Backpack")
+        if backpack then
+            tool = backpack:FindFirstChildOfClass("Tool")
+            if tool then
+                tool.Parent = character
+            end
+        end
+    end
+    
+    if tool then
+        -- Simular clique no node
+        local targetPart
+        if node:IsA("BasePart") then
+            targetPart = node
+        elseif node:IsA("Model") and node.PrimaryPart then
+            targetPart = node.PrimaryPart
+        else
+            targetPart = node:FindFirstChildWhichIsA("BasePart")
+        end
+        
+        if targetPart then
+            -- Isto é uma simulação, a implementação real depende do jogo
+            -- Pode ser necessário usar:
+            -- game:GetService("ReplicatedStorage").RemoteEvents.MineOre:FireServer(targetPart)
+            
+            print("Minerando: " .. node.Name)
+            
+            -- Incrementar estatísticas
+            self.Config.Stats.NodesMined = self.Config.Stats.NodesMined + 1
+            
+            -- Simulação de mineração bem-sucedida
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Teleportar para o vendedor
+function MiningAutomator:TeleportToSeller()
+    -- Encontrar o NPC vendedor no jogo
+    local seller
+    
+    -- Exemplo de como encontrar o vendedor, ajuste conforme necessário
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name == "Alex" or obj.Name:find("Merchant") or obj.Name:find("Seller") then
+            seller = obj
+            break
+        end
+    end
+    
+    if seller then
+        local sellerPosition
+        if seller:IsA("Model") and seller.PrimaryPart then
+            sellerPosition = seller.PrimaryPart.Position
+        elseif seller:IsA("BasePart") then
+            sellerPosition = seller.Position
+        else
+            local part = seller:FindFirstChildWhichIsA("BasePart")
+            if part then
+                sellerPosition = part.Position
+            else
+                return false
+            end
+        end
+        
+        -- Adicionar um offset para ficar na frente do vendedor
+        sellerPosition = sellerPosition + Vector3.new(0, 0, 5)
+        
+        -- Teleportar
+        hrp.CFrame = CFrame.new(sellerPosition)
+        return true
+    end
+    
+    return false
+end
+
+-- Vender todos os itens
+function MiningAutomator:SellAll()
+    -- Implementação depende da mecânica do jogo
+    -- Pode envolver:
+    -- 1. Enviar um evento remoto para o servidor
+    -- 2. Interagir com o NPC vendedor
+    -- 3. Clicar em um botão específico
+    
+    print("Tentando vender todos os itens...")
+    
+    -- Exemplo (substitua pelo código real):
+    -- game:GetService("ReplicatedStorage").RemoteEvents.SellAll:FireServer()
+    
+    -- Atualizar dinheiro ganho (exemplo)
+    -- Aqui você precisaria obter o valor real do dinheiro ganho
+    local moneyGained = 1000 -- Exemplo
+    self.Config.Stats.MoneyEarned = self.Config.Stats.MoneyEarned + moneyGained
+    
+    return true
+end
+
+-- Iniciar o ciclo de automação
+function MiningAutomator:StartAutomation()
+    self.Config.Stats.StartTime = os.time()
+    self.IsRunning = true
+    
+    -- Criar uma loop que roda enquanto a automação estiver ativa
+    spawn(function()
+        while self.IsRunning and self.Config.AutoMine do
+            -- Encontrar o node mais próximo
+            local nearestNode = self:FindNearestNode()
+            
+            if nearestNode then
+                -- Teleportar para o node
+                if self.Config.AutoTeleport then
+                    self:TeleportToNode(nearestNode)
+                    wait(0.5) -- Pequeno delay após teleporte
+                end
+                
+                -- Minerar o node
+                local success = self:MineNode(nearestNode)
+                
+                if success then
+                    -- Esperar pelo delay configurado
+                    wait(self.Config.MiningDelay)
+                else
+                    -- Se falhar, esperar um pouco e tentar novamente
+                    wait(1)
+                end
+            else
+                -- Se não encontrar nenhum node, esperar um pouco
+                print("Nenhum node encontrado. Aguardando...")
+                wait(2)
+            end
+        end
+    end)
+end
+
+-- Parar a automação
+function MiningAutomator:StopAutomation()
+    self.IsRunning = false
+end
+
+-- Atualizar as estatísticas na GUI
+function MiningAutomator:UpdateStats(gui)
+    if not gui then return end
+    
+    local statsSection = gui:FindFirstChild("MainFrame"):FindFirstChild("LeftSection"):FindFirstChild("StatsSection")
+    if statsSection then
+        local nodesMinedLabel = statsSection:FindFirstChild("NodesMinedLabel")
+        local timeRunningLabel = statsSection:FindFirstChild("TimeRunningLabel")
+        local moneyEarnedLabel = statsSection:FindFirstChild("MoneyEarnedLabel")
+        
+        if nodesMinedLabel then
+            nodesMinedLabel.Text = "Nodes Minerados: " .. self.Config.Stats.NodesMined
+        end
+        
+        if timeRunningLabel and self.Config.Stats.StartTime > 0 then
+            local runningTime = os.time() - self.Config.Stats.StartTime
+            local hours = math.floor(runningTime / 3600)
+            local minutes = math.floor((runningTime % 3600) / 60)
+            local seconds = runningTime % 60
+            timeRunningLabel.Text = string.format("Tempo Ativo: %02d:%02d:%02d", hours, minutes, seconds)
+        end
+        
+        if moneyEarnedLabel then
+            moneyEarnedLabel.Text = "Dinheiro Ganho: $" .. self.Config.Stats.MoneyEarned
+        end
+    end
+end
+
+-- Resetar estatísticas
+function MiningAutomator:ResetStats()
+    self.Config.Stats.NodesMined = 0
+    self.Config.Stats.MoneyEarned = 0
+    self.Config.Stats.StartTime = os.time()
+end
+
+return MiningAutomator 
