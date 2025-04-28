@@ -117,14 +117,14 @@ local function ConnectGUItoFunctions()
                 local ironNodeToggle = ironNodeFrame:FindFirstChild("Toggle")
                 if ironNodeToggle then
                     ironNodeToggle.MouseButton1Click:Connect(function()
-                        MiningAutomator.Config.SelectedNodeTypes["Iron Node"] = not MiningAutomator.Config.SelectedNodeTypes["Iron Node"]
-                        
-                        if MiningAutomator.Config.SelectedNodeTypes["Iron Node"] then
-                            ironNodeToggle.Text = "ON"
-                            ironNodeToggle.BackgroundColor3 = Color3.fromRGB(100, 70, 150)
-                        else
+                        -- Como agora usamos "All" para todos os tipos, vamos manter a visibilidade apenas
+                        local toggleState = ironNodeToggle.Text == "ON"
+                        if toggleState then
                             ironNodeToggle.Text = "OFF"
                             ironNodeToggle.BackgroundColor3 = Color3.fromRGB(80, 50, 100)
+                        else
+                            ironNodeToggle.Text = "ON"
+                            ironNodeToggle.BackgroundColor3 = Color3.fromRGB(100, 70, 150)
                         end
                     end)
                 end
