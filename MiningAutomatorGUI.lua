@@ -492,4 +492,4 @@ end)
 print("Mining World Automator carregado! Pressione Right Shift para mostrar/ocultar a interface.")
 
 -- Função principal que será implementada aqui para a automação
--- Vai conter a lógica para encontrar nós, teleportar e minerar
+-- Vai conter a lógica para encontrar nós, teleportar e minerar 
