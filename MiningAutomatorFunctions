@@ -15,7 +15,7 @@ MiningAutomator.Config = {
     AutoTeleport = false,
     MiningDelay = 0.5,
     SelectedNodeTypes = {
-        ["Iron Node"] = true
+        ["All"] = true  -- Minerar todos os tipos de nodes
     },
     Stats = {
         NodesMined = 0,
@@ -28,13 +28,13 @@ MiningAutomator.Config = {
 function MiningAutomator:FindOreNodes()
     local nodes = {}
     
-    -- Procurar por nodes no workspace
+    -- Procurar por nodes diretamente no workspace
+    -- Neste jogo, os nodes parecem ser objetos com IDs longos
     for _, obj in pairs(workspace:GetChildren()) do
-        -- Verificar se o objeto é um node baseado em alguma característica 
-        -- (nome, propriedades específicas, etc.)
-        if obj:IsA("Model") or obj:IsA("Part") then
-            -- Assumindo que os nodes têm "Node" no nome, ajuste conforme necessário
-            if obj.Name:find("Node") and self:IsNodeTypeSelected(obj.Name) then
+        -- Verificar se o objeto é um node baseado nas características observadas
+        if obj:IsA("BasePart") or obj:IsA("Model") then
+            -- Verificar se o nome parece ser um ID (formato hexadecimal longo)
+            if string.match(obj.Name, "^%x+%-%x+%-%x+%-%x+") then
                 table.insert(nodes, obj)
             end
         end
@@ -43,14 +43,30 @@ function MiningAutomator:FindOreNodes()
     return nodes
 end
 
--- Verificar se o tipo de node está selecionado
-function MiningAutomator:IsNodeTypeSelected(nodeName)
-    for nodeType, selected in pairs(self.Config.SelectedNodeTypes) do
-        if selected and nodeName:find(nodeType) then
-            return true
+-- Verificar se o jogador tem uma picareta equipada
+function MiningAutomator:HasPickaxeEquipped()
+    -- Verificar se o personagem tem uma ferramenta equipada
+    local tool = character:FindFirstChildOfClass("Tool")
+    
+    if tool then
+        -- Verificar se o nome da ferramenta contém "Pickaxe"
+        if string.find(tool.Name:lower(), "pick") then
+            return true, tool
         end
     end
-    return false
+    
+    -- Se não tiver equipada, tentar equipar do inventário
+    local backpack = player:FindFirstChild("Backpack")
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            if item:IsA("Tool") and string.find(item.Name:lower(), "pick") then
+                item.Parent = character
+                return true, item
+            end
+        end
+    end
+    
+    return false, nil
 end
 
 -- Encontrar o node mais próximo
@@ -109,74 +125,119 @@ function MiningAutomator:TeleportToNode(node)
     -- Teleportar o personagem
     if self.Config.AutoTeleport then
         hrp.CFrame = CFrame.new(targetPosition)
+        wait(0.1) -- Pequeno delay após teleporte
         return true
     end
     
     return false
 end
 
--- Minerar um node
-function MiningAutomator:MineNode(node)
-    if not node then return false end
-    
-    -- Aqui precisamos entender a mecânica do jogo para minerar
-    -- Isso pode envolver:
-    -- 1. Enviar um evento remoto
-    -- 2. Usar uma ferramenta específica
-    -- 3. Clicar no node
-    
-    -- Como exemplo, vamos assumir que precisa usar uma ferramenta e clicar
-    local tool = character:FindFirstChildOfClass("Tool")
-    if not tool then
-        -- Tenta equipar uma ferramenta do inventário
-        local backpack = player:FindFirstChild("Backpack")
-        if backpack then
-            tool = backpack:FindFirstChildOfClass("Tool")
-            if tool then
-                tool.Parent = character
-            end
-        end
-    end
-    
-    if tool then
-        -- Simular clique no node
-        local targetPart
-        if node:IsA("BasePart") then
-            targetPart = node
-        elseif node:IsA("Model") and node.PrimaryPart then
-            targetPart = node.PrimaryPart
-        else
-            targetPart = node:FindFirstChildWhichIsA("BasePart")
-        end
-        
-        if targetPart then
-            -- Isto é uma simulação, a implementação real depende do jogo
-            -- Pode ser necessário usar:
-            -- game:GetService("ReplicatedStorage").RemoteEvents.MineOre:FireServer(targetPart)
-            
-            print("Minerando: " .. node.Name)
-            
-            -- Incrementar estatísticas
-            self.Config.Stats.NodesMined = self.Config.Stats.NodesMined + 1
-            
-            -- Simulação de mineração bem-sucedida
-            return true
-        end
+-- Simular clique em um objeto
+function MiningAutomator:SimulateClick(target)
+    -- Verificar se temos o módulo VirtualUser para simular cliques
+    local virtualUser = game:GetService("VirtualUser")
+    if virtualUser then
+        -- Simular clique na posição do alvo
+        local position = target.Position
+        virtualUser:CaptureController()
+        virtualUser:ClickButton1(Vector2.new(position.X, position.Y))
+        return true
     end
     
     return false
 end
 
+-- Minerar um node usando ferramenta
+function MiningAutomator:MineNode(node)
+    if not node then return false end
+    
+    -- Verificar se tem uma picareta equipada
+    local hasPickaxe, pickaxe = self:HasPickaxeEquipped()
+    if not hasPickaxe then
+        print("Nenhuma picareta encontrada!")
+        return false
+    end
+    
+    -- Obter a parte alvo do node
+    local targetPart
+    if node:IsA("BasePart") then
+        targetPart = node
+    elseif node:IsA("Model") and node.PrimaryPart then
+        targetPart = node.PrimaryPart
+    else
+        targetPart = node:FindFirstChildWhichIsA("BasePart")
+    end
+    
+    if not targetPart then
+        return false
+    end
+    
+    -- Posicionar o jogador olhando para o node
+    hrp.CFrame = CFrame.new(hrp.Position, targetPart.Position)
+    
+    -- Tentar usar Remote Events para minerar (primeiro método)
+    local success = false
+    
+    -- Tentar encontrar e acionar o RemoteEvent para minerar
+    -- (Note: Precisamos descobrir o RemoteEvent específico usado pelo jogo)
+    -- Tenta alguns padrões comuns
+    for _, remote in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+        if remote:IsA("RemoteEvent") then
+            if string.match(remote.Name:lower(), "mine") or 
+               string.match(remote.Name:lower(), "hit") or 
+               string.match(remote.Name:lower(), "break") then
+                -- Tentar acionar este remote
+                pcall(function()
+                    remote:FireServer(targetPart)
+                end)
+                wait(0.1)
+                success = true
+                break
+            end
+        end
+    end
+    
+    -- Se não conseguir usar RemoteEvent, tentar método de clique
+    if not success then
+        -- Método alternativo: clicar e segurar no node
+        self:SimulateClick(targetPart)
+        wait(0.5) -- Manter clicado por meio segundo
+    end
+    
+    -- Incrementar estatísticas
+    self.Config.Stats.NodesMined = self.Config.Stats.NodesMined + 1
+    
+    -- Retornar sucesso
+    return true
+end
+
 -- Teleportar para o vendedor
 function MiningAutomator:TeleportToSeller()
-    -- Encontrar o NPC vendedor no jogo
+    -- Procurar por NPCs que podem ser vendedores
     local seller
     
-    -- Exemplo de como encontrar o vendedor, ajuste conforme necessário
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj.Name == "Alex" or obj.Name:find("Merchant") or obj.Name:find("Seller") then
-            seller = obj
-            break
+    -- Primeiro, procurar na pasta NPCs se existir
+    local npcsFolder = workspace:FindFirstChild("NPCs")
+    if npcsFolder then
+        for _, npc in pairs(npcsFolder:GetChildren()) do
+            if npc.Name:lower():find("sell") or 
+               npc.Name:lower():find("merchant") or 
+               npc.Name == "Alex" then
+                seller = npc
+                break
+            end
+        end
+    end
+    
+    -- Se não encontrou na pasta NPCs, procurar no workspace
+    if not seller then
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj.Name:lower():find("sell") or 
+               obj.Name:lower():find("merchant") or 
+               obj.Name == "Alex" then
+                seller = obj
+                break
+            end
         end
     end
     
@@ -208,20 +269,50 @@ end
 
 -- Vender todos os itens
 function MiningAutomator:SellAll()
-    -- Implementação depende da mecânica do jogo
-    -- Pode envolver:
-    -- 1. Enviar um evento remoto para o servidor
-    -- 2. Interagir com o NPC vendedor
-    -- 3. Clicar em um botão específico
+    -- Primeiro, teleportar para o vendedor
+    self:TeleportToSeller()
+    wait(0.5) -- Esperar um pouco após teleporte
     
-    print("Tentando vender todos os itens...")
+    -- Tentar encontrar botões de venda ou RemoteEvents relacionados
+    -- Método 1: Procurar botões UI de venda
+    local sellButton
+    for _, ui in pairs(player.PlayerGui:GetDescendants()) do
+        if ui:IsA("TextButton") and 
+          (ui.Text:lower():find("sell") or ui.Name:lower():find("sell")) then
+            sellButton = ui
+            break
+        end
+    end
     
-    -- Exemplo (substitua pelo código real):
-    -- game:GetService("ReplicatedStorage").RemoteEvents.SellAll:FireServer()
+    if sellButton then
+        -- Simular clique no botão
+        local function simulateButtonClick(button)
+            for _, connection in pairs(getconnections(button.MouseButton1Click)) do
+                connection:Fire()
+            end
+            for _, connection in pairs(getconnections(button.Activated)) do
+                connection:Fire()
+            end
+        end
+        
+        pcall(simulateButtonClick, sellButton)
+    else
+        -- Método 2: Procurar RemoteEvents relacionados a venda
+        for _, remote in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+            if remote:IsA("RemoteEvent") and 
+              (remote.Name:lower():find("sell") or remote.Name:lower():find("vend")) then
+                -- Tentar acionar este remote sem argumentos
+                pcall(function()
+                    remote:FireServer()
+                end)
+                break
+            end
+        end
+    end
     
     -- Atualizar dinheiro ganho (exemplo)
-    -- Aqui você precisaria obter o valor real do dinheiro ganho
-    local moneyGained = 1000 -- Exemplo
+    -- Precisaríamos de uma maneira de rastrear o dinheiro real ganho
+    local moneyGained = 1000 -- Valor mock apenas para teste
     self.Config.Stats.MoneyEarned = self.Config.Stats.MoneyEarned + moneyGained
     
     return true
@@ -235,6 +326,14 @@ function MiningAutomator:StartAutomation()
     -- Criar uma loop que roda enquanto a automação estiver ativa
     spawn(function()
         while self.IsRunning and self.Config.AutoMine do
+            -- Verificar se tem uma picareta equipada
+            local hasPickaxe = self:HasPickaxeEquipped()
+            if not hasPickaxe then
+                print("Nenhuma picareta encontrada! Tentando novamente...")
+                wait(1)
+                continue
+            end
+            
             -- Encontrar o node mais próximo
             local nearestNode = self:FindNearestNode()
             
@@ -242,23 +341,17 @@ function MiningAutomator:StartAutomation()
                 -- Teleportar para o node
                 if self.Config.AutoTeleport then
                     self:TeleportToNode(nearestNode)
-                    wait(0.5) -- Pequeno delay após teleporte
                 end
                 
                 -- Minerar o node
                 local success = self:MineNode(nearestNode)
                 
-                if success then
-                    -- Esperar pelo delay configurado
-                    wait(self.Config.MiningDelay)
-                else
-                    -- Se falhar, esperar um pouco e tentar novamente
-                    wait(1)
-                end
+                -- Esperar pelo delay configurado
+                wait(self.Config.MiningDelay)
             else
                 -- Se não encontrar nenhum node, esperar um pouco
                 print("Nenhum node encontrado. Aguardando...")
-                wait(2)
+                wait(1)
             end
         end
     end)
