@@ -2,8 +2,8 @@
 -- Criado por: Claude
 
 -- Carregar os módulos
-local MiningAutomatorGUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MiningWorldAutomator/main/MiningAutomatorGUI.lua"))()
-local MiningAutomator = loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MiningWorldAutomator/main/MiningAutomatorFunctions.lua"))()
+local MiningAutomatorGUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/EkonZy/MiningWorldScript/main/MiningAutomatorGUI.lua"))()
+local MiningAutomator = loadstring(game:HttpGet("https://raw.githubusercontent.com/EkonZy/MiningWorldScript/main/MiningAutomatorFunctions.lua"))()
 
 -- Variáveis locais
 local player = game.Players.LocalPlayer
@@ -172,7 +172,7 @@ end
 -- Inicializar
 local function Initialize()
     -- Carregar a GUI
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MiningWorldAutomator/main/MiningAutomatorGUI.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EkonZy/MiningWorldScript/main/MiningAutomatorGUI.lua"))()
     
     -- Aguardar a GUI ser carregada
     wait(1)
