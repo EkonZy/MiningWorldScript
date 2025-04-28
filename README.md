@@ -5,12 +5,11 @@ Script automático para o jogo Mining World no Roblox.
 ## Funcionalidades
 
 - **Interface gráfica personalizada** no estilo roxo/neon
-- **Automação de mineração** - mina automaticamente os nodes selecionados
-- **Teletransporte automático** - teleporta entre os nodes
-- **Controle de delay** - configure o tempo entre ações
+- **Automação de mineração** - detecta e minera automaticamente nodes no jogo
+- **Teletransporte automático** - teleporta entre os nodes para mineração eficiente
+- **Controle de delay** - configure o tempo entre ações de mineração
 - **Estatísticas** - acompanhe o progresso da sua mineração
-- **Seleção de tipos de nodes** - escolha quais recursos minerar
-- **Funções rápidas** - teleporte para o vendedor, venda todos os itens
+- **Funções rápidas** - teleporte para o vendedor e venda automática de recursos
 
 ## Como usar
 
@@ -18,7 +17,7 @@ Script automático para o jogo Mining World no Roblox.
 2. Cole o seguinte código:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MiningWorldAutomator/main/MiningAutomatorLoader.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/EkonZy/MiningWorldScript/main/MiningAutomatorLoader.lua"))()
 ```
 
 3. Execute o script
@@ -29,8 +28,14 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/MiningWor
 - **Automação**: Ative/desative a mineração e teletransporte automáticos
 - **Delay**: Ajuste o tempo entre as ações de mineração
 - **Estatísticas**: Acompanhe nodes minerados, tempo ativo e dinheiro ganho
-- **Tipos de Nodes**: Selecione quais tipos de recursos minerar
 - **Ações**: Botões rápidos para teleportar ao vendedor, vender itens, etc.
+
+## Como funciona o script
+
+- Detecta automaticamente nodes de minério no jogo (mesmo com nomes de IDs complexos)
+- Equipa automaticamente uma picareta do seu inventário
+- Teleporta para os nodes e simula cliques para minerá-los
+- Tenta identificar vendedores para vender recursos automaticamente
 
 ## Aviso importante
 
@@ -42,9 +47,8 @@ Você pode personalizar este script modificando:
 
 - Cores da interface
 - Configurações de delay
-- Tipos de nodes disponíveis
 - Funcionalidades adicionais
 
 ## Atualização
 
-O script está em constante desenvolvimento. Novas funcionalidades serão adicionadas em breve!
+O script está em constante desenvolvimento e foi otimizado especificamente para o Mining World. Novas funcionalidades serão adicionadas conforme necessário.
